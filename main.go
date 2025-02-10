@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -26,6 +27,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error initializing bot:", err)
 	}
+	//log.Print(os.Getenv("LINE_CHANNEL_SECRET"))
 
 	// ใช้ Gin Framework
 	r := gin.Default()
@@ -50,29 +52,43 @@ func main() {
 
 // Webhook Handler
 func webhookHandler(c *gin.Context) {
+	signature := c.GetHeader("X-Line-Signature")
+	if signature == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing signature"})
+		return
+	}
+
+	_, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read request body"})
+		return
+	}
+
 	events, err := bot.ParseRequest(c.Request)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
 	for _, event := range events {
 		if event.Type == linebot.EventTypeMessage {
-			// ตรวจสอบว่า event มาจาก Group หรือไม่
-			if event.Source.Type == linebot.EventSourceTypeGroup {
-				if message, ok := event.Message.(*linebot.TextMessage); ok {
-					if message.Text == "bot" {
-						replyMessage := linebot.NewTextMessage("Hello, World!")
-						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
-						if err != nil {
-							log.Println("Error sending reply:", err)
-						}
-					}
-				}
-			} else {
-				log.Println("Event is not from a group, skipping...")
+			var replyMessage string
+
+			switch event.Source.Type {
+			case linebot.EventSourceTypeGroup: // ถ้ามาจากกลุ่ม
+				replyMessage = "Hello, World!"
+			case linebot.EventSourceTypeUser: // ถ้ามาจาก Friend (User)
+				replyMessage = "bot"
+			default:
+				replyMessage = "Unknown source"
+			}
+
+			_, err := bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(replyMessage)).Do()
+			if err != nil {
+				log.Println("Error sending reply:", err)
 			}
 		}
 	}
+
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
