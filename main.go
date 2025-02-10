@@ -63,8 +63,14 @@ func webhookHandler(c *gin.Context) {
 			// ตรวจสอบว่า event มาจาก Group หรือไม่
 			if event.Source.Type == linebot.EventSourceTypeGroup {
 				if message, ok := event.Message.(*linebot.TextMessage); ok {
-					if message.Text == "bot" {
-						replyMessage := linebot.NewTextMessage("Hello, World!")
+					if message.Text == "เงินออมวันนี้" || message.Text == "เงินออม" {
+						replyMessage := linebot.NewTextMessage("วันนี้ออมเงิน " + strconv.Itoa(getDay()) + " บาท")
+						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
+						if err != nil {
+							log.Println("Error sending reply:", err)
+						}
+					} else if message.Text == "สรุปยอดเงินออม" {
+						replyMessage := linebot.NewTextMessage("วันนี้ออมเงิน " + strconv.Itoa(getDay()) + " บาท")
 						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
 						if err != nil {
 							log.Println("Error sending reply:", err)
@@ -74,6 +80,12 @@ func webhookHandler(c *gin.Context) {
 			} else {
 				if message, ok := event.Message.(*linebot.TextMessage); ok {
 					if message.Text == "เงินออมวันนี้" || message.Text == "aom" {
+						replyMessage := linebot.NewTextMessage("วันนี้ออมเงิน " + strconv.Itoa(getDay()) + " บาท")
+						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
+						if err != nil {
+							log.Println("Error sending reply:", err)
+						}
+					} else if message.Text == "สรุปยอดเงินออม" {
 						replyMessage := linebot.NewTextMessage("วันนี้ออมเงิน " + strconv.Itoa(getDay()) + " บาท")
 						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
 						if err != nil {
@@ -94,4 +106,13 @@ func getDay() int {
 	//startOfYear := time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, now.Location())
 	// คำนวณจำนวนวันที่ผ่านมาโดยใช้ .YearDay()
 	return now.YearDay()
+}
+
+func getTotal() int {
+	// ดึงวันที่ปัจจุบัน
+	now := time.Now()
+
+	dayNum := now.YearDay()
+
+	return (1 + dayNum) * dayNum / 2
 }
