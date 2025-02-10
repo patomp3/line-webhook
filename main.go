@@ -73,7 +73,7 @@ func webhookHandler(c *gin.Context) {
 				}
 			} else {
 				if message, ok := event.Message.(*linebot.TextMessage); ok {
-					if message.Text == "เงินออมวันนี้" {
+					if message.Text == "เงินออมวันนี้" || message.Text == "aom" {
 						replyMessage := linebot.NewTextMessage("วันนี้ออมเงิน " + strconv.Itoa(getDay()) + " บาท")
 						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
 						if err != nil {
