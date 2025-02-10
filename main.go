@@ -25,7 +25,7 @@ func main() {
 		}
 
 		fmt.Println("Received Webhook:", payload)
-		c.JSON(http.StatusOK, gin.H{"status": "success"})
+		c.JSON(http.StatusOK, gin.H{"status": "success2"})
 	})
 
 	// Port ที่ Railway ใช้ค่าจาก Environment Variable
