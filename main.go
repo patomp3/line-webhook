@@ -69,8 +69,8 @@ func webhookHandler(c *gin.Context) {
 						if err != nil {
 							log.Println("Error sending reply:", err)
 						}
-					} else if message.Text == "สรุปยอดเงินออม" {
-						replyMessage := linebot.NewTextMessage("วันนี้ออมเงิน " + strconv.Itoa(getDay()) + " บาท")
+					} else if message.Text == "สรุปยอดเงินออม" || message.Text == "สรุปเงิน" {
+						replyMessage := linebot.NewTextMessage("สรุปยอดเงินทั้งหมดจนถึงวันนี้คือ " + strconv.Itoa(getTotal()) + " บาท")
 						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
 						if err != nil {
 							log.Println("Error sending reply:", err)
@@ -86,7 +86,7 @@ func webhookHandler(c *gin.Context) {
 							log.Println("Error sending reply:", err)
 						}
 					} else if message.Text == "สรุปยอดเงินออม" {
-						replyMessage := linebot.NewTextMessage("วันนี้ออมเงิน " + strconv.Itoa(getDay()) + " บาท")
+						replyMessage := linebot.NewTextMessage("สรุปยอดเงินทั้งหมดจนถึงวันนี้คือ " + strconv.Itoa(getTotal()) + " บาท")
 						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
 						if err != nil {
 							log.Println("Error sending reply:", err)
