@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -70,13 +72,26 @@ func webhookHandler(c *gin.Context) {
 					}
 				}
 			} else {
-				replyMessage := linebot.NewTextMessage("Hello!!!")
-				_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
-				if err != nil {
-					log.Println("Error sending reply:", err)
+				if message, ok := event.Message.(*linebot.TextMessage); ok {
+					if message.Text == "เงินออมวันนี้" {
+						replyMessage := linebot.NewTextMessage("วันนี้ออมเงิน " + strconv.Itoa(getDay()) + " บาท")
+						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
+						if err != nil {
+							log.Println("Error sending reply:", err)
+						}
+					}
 				}
 			}
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
+
+func getDay() int {
+	// ดึงวันที่ปัจจุบัน
+	now := time.Now()
+	// สร้างตัวแปรที่เป็นวันที่ 1 มกราคมของปีเดียวกัน
+	//startOfYear := time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, now.Location())
+	// คำนวณจำนวนวันที่ผ่านมาโดยใช้ .YearDay()
+	return now.YearDay()
 }
