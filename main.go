@@ -1,13 +1,32 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	"github.com/line/line-bot-sdk-go/v7/linebot"
 )
 
+var bot *linebot.Client
+
+func init() {
+	godotenv.Load()
+}
+
 func main() {
+	var err error
+	// สร้าง LINE Bot Client
+	bot, err = linebot.New(
+		os.Getenv("LINE_CHANNEL_SECRET"),
+		os.Getenv("LINE_CHANNEL_TOKEN"),
+	)
+	if err != nil {
+		log.Fatal("Error initializing bot:", err)
+	}
+
 	// ใช้ Gin Framework
 	r := gin.Default()
 
@@ -17,30 +36,43 @@ func main() {
 	})
 
 	// Webhook Endpoint
-	r.POST("/webhook", func(c *gin.Context) {
-		var payload map[string]interface{}
-		if err := c.ShouldBindJSON(&payload); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		fmt.Println("Received Webhook:", payload)
-		c.JSON(http.StatusOK, gin.H{"status": "success2"})
-	})
+	r.POST("/webhook", webhookHandler)
 
 	// Port ที่ Railway ใช้ค่าจาก Environment Variable
-	port := "8080"
-	// if envPort := getEnv("PORT", "8080"); envPort != "" {
-	// 	port = envPort
-	// }
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // ค่า Default
+	}
 
-	r.Run(":" + port) // Start Server
+	log.Println("Server started on port", port)
+	r.Run(":" + port)
 }
 
-// getEnv ฟังก์ชันช่วยดึงค่าตัวแปร Environment
-// func getEnv(key, defaultValue string) string {
-// 	if value := getenv(key); value != "" {
-// 		return value
-// 	}
-// 	return defaultValue
-// }
+// Webhook Handler
+func webhookHandler(c *gin.Context) {
+	events, err := bot.ParseRequest(c.Request)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	for _, event := range events {
+		if event.Type == linebot.EventTypeMessage {
+			// ตรวจสอบว่า event มาจาก Group หรือไม่
+			if event.Source.Type == linebot.EventSourceTypeGroup {
+				if message, ok := event.Message.(*linebot.TextMessage); ok {
+					if message.Text == "bot" {
+						replyMessage := linebot.NewTextMessage("Hello, World!")
+						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
+						if err != nil {
+							log.Println("Error sending reply:", err)
+						}
+					}
+				}
+			} else {
+				log.Println("Event is not from a group, skipping...")
+			}
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
