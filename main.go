@@ -40,6 +40,7 @@ func main() {
 
 	// Webhook Endpoint
 	r.POST("/webhook", webhookHandler)
+	r.GET("/test", test)
 
 	// Port ที่ Railway ใช้ค่าจาก Environment Variable
 	port := os.Getenv("PORT")
@@ -100,12 +101,17 @@ func webhookHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
+func test(c *gin.Context) {
+
+	c.JSON(http.StatusOK, gin.H{"status": getDay()})
+}
+
 func getDay() int {
 	// Load the location for Thailand (Asia/Bangkok)
 	loc, err := time.LoadLocation("Asia/Bangkok")
 	if err != nil {
 		fmt.Println("Error loading location:", err)
-		return 0
+		return -1
 	}
 
 	// Get the current time in Thailand
