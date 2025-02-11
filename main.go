@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -100,11 +101,17 @@ func webhookHandler(c *gin.Context) {
 }
 
 func getDay() int {
-	// ดึงวันที่ปัจจุบัน
-	now := time.Now()
-	// สร้างตัวแปรที่เป็นวันที่ 1 มกราคมของปีเดียวกัน
-	//startOfYear := time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, now.Location())
-	// คำนวณจำนวนวันที่ผ่านมาโดยใช้ .YearDay()
+	// Load the location for Thailand (Asia/Bangkok)
+	loc, err := time.LoadLocation("Asia/Bangkok")
+	if err != nil {
+		fmt.Println("Error loading location:", err)
+		return 0
+	}
+
+	// Get the current time in Thailand
+	now := time.Now().In(loc)
+
+	// Calculate the day of the year
 	return now.YearDay()
 }
 
