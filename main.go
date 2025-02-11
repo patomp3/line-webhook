@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -108,11 +107,8 @@ func test(c *gin.Context) {
 
 func getDay() int {
 	// Load the location for Thailand (Asia/Bangkok)
-	loc, err := time.LoadLocation("Asia/Bangkok")
-	if err != nil {
-		fmt.Println("Error loading location:", err)
-		return -1
-	}
+	// Thailand is UTC+7
+	loc := time.FixedZone("Asia/Bangkok", 7*60*60)
 
 	// Get the current time in Thailand
 	now := time.Now().In(loc)
@@ -123,9 +119,9 @@ func getDay() int {
 
 func getTotal() int {
 	// ดึงวันที่ปัจจุบัน
-	now := time.Now()
+	//now := time.Now()
 
-	dayNum := now.YearDay()
+	dayNum := getDay()
 
 	return (1 + dayNum) * dayNum / 2
 }
