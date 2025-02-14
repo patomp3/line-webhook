@@ -76,6 +76,13 @@ func webhookHandler(c *gin.Context) {
 						if err != nil {
 							log.Println("Error sending reply:", err)
 						}
+					} else if message.Text == "สรุป" {
+						flexContainer := createFlexMessage()
+						replyMessage := linebot.NewFlexMessage("สรุปยอดเงินออม", flexContainer)
+						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
+						if err != nil {
+							log.Println("Error sending Flex Message:", err)
+						}
 					}
 				}
 			} else {
