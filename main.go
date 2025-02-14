@@ -142,9 +142,15 @@ func createFlexMessage() linebot.FlexContainer {
             "contents": [
                 {
                     "type": "text",
-                    "text": "สรุปยอดเงินออม",
+                    "text": "สรุปรายการประจำวัน",
                     "weight": "bold",
                     "size": "xl"
+                },
+				{
+                    "type": "text",
+                    "text": "เงินออมวันนี้: ` + strconv.Itoa(getDay()) + ` บาท",
+                    "size": "md",
+                    "margin": "md"
                 },
                 {
                     "type": "text",
