@@ -92,6 +92,13 @@ func webhookHandler(c *gin.Context) {
 						if err != nil {
 							log.Println("Error sending reply:", err)
 						}
+					} else if message.Text == "สรุป" {
+						flexContainer := createFlexMessage()
+						replyMessage := linebot.NewFlexMessage("สรุปยอดเงินออม", flexContainer)
+						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
+						if err != nil {
+							log.Println("Error sending Flex Message:", err)
+						}
 					}
 				}
 			}
@@ -124,4 +131,36 @@ func getTotal() int {
 	dayNum := getDay()
 
 	return (1 + dayNum) * dayNum / 2
+}
+
+func createFlexMessage() linebot.FlexContainer {
+	flexJSON := `{
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "สรุปยอดเงินออม",
+                    "weight": "bold",
+                    "size": "xl"
+                },
+                {
+                    "type": "text",
+                    "text": "ยอดรวม: ` + strconv.Itoa(getTotal()) + ` บาท",
+                    "size": "md",
+                    "margin": "md"
+                }
+            ]
+        }
+    }`
+
+	flexContainer, err := linebot.UnmarshalFlexMessageJSON([]byte(flexJSON))
+	if err != nil {
+		log.Println("Error creating Flex Message:", err)
+		return nil
+	}
+
+	return flexContainer
 }
