@@ -49,7 +49,7 @@ func getUpcomingAppointments(groupID string) ([]Appointment, error) {
 	}
 	defer client.Disconnect(context.Background())
 
-	collection := client.Database("appointments_db").Collection("appointments")
+	collection := client.Database("test").Collection("my-note")
 
 	// แปลงวันที่ปัจจุบันเป็น time.Time
 	today := time.Now()
