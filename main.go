@@ -138,25 +138,61 @@ func webhookHandler(c *gin.Context) {
 							log.Println("Error sending Flex Message:", err)
 						}
 					} else if strings.HasPrefix(message.Text, "บันทึกนัดหมาย ") {
-						parts := strings.SplitN(message.Text, " ", 4)
-						if len(parts) == 4 {
-							msg := parts[1]
-							date := parts[2]
-							timeStr := parts[3]
+						// แยกคำสั่งกับเนื้อหา
+						splitCommand := strings.SplitN(message.Text, " ", 2)
+						if len(splitCommand) != 2 {
+							reply := linebot.NewTextMessage("รูปแบบคำสั่งไม่ถูกต้อง กรุณาใช้: บันทึกนัดหมาย ข้อความ,วัน,เวลา")
+							bot.ReplyMessage(event.ReplyToken, reply).Do()
+							return
+						}
 
-							err := saveAppointmentToMongo(event.Source.GroupID, msg, date, timeStr)
-							if err != nil {
-								log.Println("Error saving appointment:", err)
-								reply := linebot.NewTextMessage("เกิดข้อผิดพลาดในการบันทึกนัดหมาย")
-								bot.ReplyMessage(event.ReplyToken, reply).Do()
-							} else {
-								reply := linebot.NewTextMessage("บันทึกนัดหมายเรียบร้อยแล้ว: " + msg + " " + date + " " + timeStr)
-								bot.ReplyMessage(event.ReplyToken, reply).Do()
-							}
+						content := splitCommand[1]
+						dataParts := strings.Split(content, ",")
+						if len(dataParts) != 3 {
+							reply := linebot.NewTextMessage("รูปแบบข้อมูลไม่ถูกต้อง กรุณาใช้: บันทึกนัดหมาย ข้อความ,วัน,เวลา")
+							bot.ReplyMessage(event.ReplyToken, reply).Do()
+							return
+						}
+
+						messageText := strings.TrimSpace(dataParts[0])
+						date := strings.TrimSpace(dataParts[1])
+						timeStr := strings.TrimSpace(dataParts[2])
+
+						// บันทึกลง MongoDB
+						err := saveAppointmentToMongo(event.Source.GroupID, messageText, date, timeStr)
+						if err != nil {
+							log.Println("Error saving appointment:", err)
+							reply := linebot.NewTextMessage("เกิดข้อผิดพลาดในการบันทึกนัดหมาย")
+							bot.ReplyMessage(event.ReplyToken, reply).Do()
 						} else {
-							reply := linebot.NewTextMessage("รูปแบบคำสั่งไม่ถูกต้อง กรุณาใช้: บันทึกนัดหมาย <ข้อความ> <วันที่> <เวลา>")
+							reply := linebot.NewTextMessage("บันทึกนัดหมายเรียบร้อยแล้ว " + messageText + " (" + date + " " + timeStr + ")")
 							bot.ReplyMessage(event.ReplyToken, reply).Do()
 						}
+					} else if message.Text == "สรุปนัดหมาย" {
+						groupID := event.Source.GroupID
+						appointments, err := getUpcomingAppointments(groupID)
+						if err != nil {
+							log.Println("Error retrieving appointments:", err)
+							reply := linebot.NewTextMessage("เกิดข้อผิดพลาดในการดึงนัดหมาย")
+							bot.ReplyMessage(event.ReplyToken, reply).Do()
+							return
+						}
+
+						if len(appointments) == 0 {
+							reply := linebot.NewTextMessage("ยังไม่นัดหมายในวันนี้หรืออนาคต")
+							bot.ReplyMessage(event.ReplyToken, reply).Do()
+							return
+						}
+
+						// สร้างข้อความสรุป
+						var sb strings.Builder
+						sb.WriteString("📅 นัดหมายที่กำลังจะถึง:\n")
+						for _, ap := range appointments {
+							sb.WriteString("- " + ap.ApDate + " " + ap.ApTime + " : " + ap.Message + "\n")
+						}
+
+						reply := linebot.NewTextMessage(sb.String())
+						bot.ReplyMessage(event.ReplyToken, reply).Do()
 					}
 				}
 			} else {
