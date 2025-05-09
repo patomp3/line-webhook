@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -41,6 +42,10 @@ func main() {
 	r.POST("/webhook", webhookHandler)
 	r.GET("/test", test)
 
+	// New Routes
+	// r.POST("/sendmessage", sendMessage)
+	// r.POST("/sendflexmessage", sendFlexMessage)
+
 	// Port ที่ Railway ใช้ค่าจาก Environment Variable
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -50,6 +55,55 @@ func main() {
 	log.Println("Server started on port", port)
 	r.Run(":" + port)
 }
+
+// func sendMessage(c *gin.Context) {
+// 	var req struct {
+// 		UserID  string `json:"userId"`
+// 		Message string `json:"message"`
+// 	}
+
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	msg := linebot.NewTextMessage(req.Message)
+// 	_, err := bot.PushMessage(req.UserID, msg).Do()
+// 	if err != nil {
+// 		log.Println("Error sending message:", err)
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{"status": "message sent"})
+// }
+
+// func sendFlexMessage(c *gin.Context) {
+// 	var req struct {
+// 		UserID string `json:"userId"`
+// 	}
+
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	flexContainer := createFlexMessage()
+// 	if flexContainer == nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create flex message"})
+// 		return
+// 	}
+
+// 	msg := linebot.NewFlexMessage("สรุปยอดเงินออม", flexContainer)
+// 	_, err := bot.PushMessage(req.UserID, msg).Do()
+// 	if err != nil {
+// 		log.Println("Error sending flex message:", err)
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{"status": "flex message sent"})
+// }
 
 // Webhook Handler
 func webhookHandler(c *gin.Context) {
@@ -82,6 +136,26 @@ func webhookHandler(c *gin.Context) {
 						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
 						if err != nil {
 							log.Println("Error sending Flex Message:", err)
+						}
+					} else if strings.HasPrefix(message.Text, "บันทึกนัดหมาย ") {
+						parts := strings.SplitN(message.Text, " ", 4)
+						if len(parts) == 4 {
+							msg := parts[1]
+							date := parts[2]
+							timeStr := parts[3]
+
+							err := saveAppointmentToMongo(event.Source.GroupID, msg, date, timeStr)
+							if err != nil {
+								log.Println("Error saving appointment:", err)
+								reply := linebot.NewTextMessage("เกิดข้อผิดพลาดในการบันทึกนัดหมาย")
+								bot.ReplyMessage(event.ReplyToken, reply).Do()
+							} else {
+								reply := linebot.NewTextMessage("บันทึกนัดหมายเรียบร้อยแล้ว: " + msg + " " + date + " " + timeStr)
+								bot.ReplyMessage(event.ReplyToken, reply).Do()
+							}
+						} else {
+							reply := linebot.NewTextMessage("รูปแบบคำสั่งไม่ถูกต้อง กรุณาใช้: บันทึกนัดหมาย <ข้อความ> <วันที่> <เวลา>")
+							bot.ReplyMessage(event.ReplyToken, reply).Do()
 						}
 					}
 				}
@@ -116,6 +190,7 @@ func webhookHandler(c *gin.Context) {
 
 func test(c *gin.Context) {
 
+	saveAppointmentToMongo("11", "นัดหมาย", "9/5/2025", "13:00")
 	c.JSON(http.StatusOK, gin.H{"status": getDay()})
 }
 
