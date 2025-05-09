@@ -226,7 +226,9 @@ func webhookHandler(c *gin.Context) {
 
 func test(c *gin.Context) {
 
-	saveAppointmentToMongo("11", "นัดหมาย", "9/5/2025", "13:00")
+	//saveAppointmentToMongo("11", "นัดหมาย", "9/5/2025", "13:00")
+	appointments, _ := getUpcomingAppointments("C8b7ac02f65a211fe9dbeeaca96cc019e")
+	log.Printf("%v", appointments)
 	c.JSON(http.StatusOK, gin.H{"status": getDay()})
 }
 

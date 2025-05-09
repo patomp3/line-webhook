@@ -63,18 +63,22 @@ func getUpcomingAppointments(groupID string) ([]Appointment, error) {
 	}
 	defer cursor.Close(context.Background())
 
+	//log.Printf("%v", cursor)
 	var allAppointments []Appointment
 	for cursor.Next(context.Background()) {
 		var ap Appointment
 		if err := cursor.Decode(&ap); err != nil {
 			continue
 		}
+		//log.Printf("%v", ap)
 		// ตรวจสอบว่า apDate >= วันนี้
 		apDateParsed, err := time.Parse(layout, ap.ApDate)
+		//log.Printf("%v", err)
 		if err == nil && !apDateParsed.Before(today) {
 			allAppointments = append(allAppointments, ap)
 		}
 	}
 
+	//log.Printf("Appoint Return = %v", allAppointments)
 	return allAppointments, nil
 }
