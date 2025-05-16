@@ -131,12 +131,40 @@ func webhookHandler(c *gin.Context) {
 							log.Println("Error sending reply:", err)
 						}
 					} else if message.Text == "สรุป" {
-						flexContainer := createFlexMessage()
-						replyMessage := linebot.NewFlexMessage("สรุปยอดเงินออม", flexContainer)
-						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
+
+						// สร้างข้อความสรุป
+						groupID := event.Source.GroupID
+						appointments, err := getUpcomingAppointmentsNext3Days(groupID)
 						if err != nil {
-							log.Println("Error sending Flex Message:", err)
+							log.Println("Error retrieving appointments:", err)
+							reply := linebot.NewTextMessage("เกิดข้อผิดพลาดในการดึงนัดหมาย")
+							bot.ReplyMessage(event.ReplyToken, reply).Do()
+							return
 						}
+
+						if len(appointments) == 0 {
+							flexContainer := createFlexMessage()
+							replyMessage := linebot.NewFlexMessage("สรุปยอดเงินออม", flexContainer)
+							_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
+							if err != nil {
+								log.Println("Error sending Flex Message:", err)
+							}
+						} else {
+							var sb strings.Builder
+							sb.WriteString("📅 นัดหมายที่กำลังจะถึง:\n")
+							for _, ap := range appointments {
+								sb.WriteString("- " + ap.ApDate + " " + ap.ApTime + " : " + ap.Message + "\n")
+							}
+							//reply := linebot.NewTextMessage(sb.String())
+
+							flexContainer := createFlexMessageWithAppointment(sb)
+							replyMessage := linebot.NewFlexMessage("สรุปยอดเงินออม", flexContainer)
+							_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
+							if err != nil {
+								log.Println("Error sending Flex Message:", err)
+							}
+						}
+
 					} else if strings.HasPrefix(message.Text, "บันทึกนัดหมาย ") {
 						// แยกคำสั่งกับเนื้อหา
 						splitCommand := strings.SplitN(message.Text, " ", 2)
@@ -227,7 +255,7 @@ func webhookHandler(c *gin.Context) {
 func test(c *gin.Context) {
 
 	//saveAppointmentToMongo("11", "นัดหมาย", "9/5/2025", "13:00")
-	appointments, _ := getUpcomingAppointments("C8b7ac02f65a211fe9dbeeaca96cc019e")
+	appointments, _ := getUpcomingAppointmentsNext3Days("C8408f87f0b343d0a39928e6aae85f647")
 	log.Printf("%v", appointments)
 	c.JSON(http.StatusOK, gin.H{"status": getDay()})
 }
@@ -275,6 +303,50 @@ func createFlexMessage() linebot.FlexContainer {
                 {
                     "type": "text",
                     "text": "ยอดรวม: ` + strconv.Itoa(getTotal()) + ` บาท",
+                    "size": "md",
+                    "margin": "md"
+                }
+            ]
+        }
+    }`
+
+	flexContainer, err := linebot.UnmarshalFlexMessageJSON([]byte(flexJSON))
+	if err != nil {
+		log.Println("Error creating Flex Message:", err)
+		return nil
+	}
+
+	return flexContainer
+}
+
+func createFlexMessageWithAppointment(sb strings.Builder) linebot.FlexContainer {
+	flexJSON := `{
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "สรุปรายการประจำวัน",
+                    "weight": "bold",
+                    "size": "xl"
+                },
+				{
+                    "type": "text",
+                    "text": "เงินออมวันนี้: ` + strconv.Itoa(getDay()) + ` บาท",
+                    "size": "md",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": "ยอดรวม: ` + strconv.Itoa(getTotal()) + ` บาท",
+                    "size": "md",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": "สรุปการนัดหมายล่วงหน้า: ` + sb.String() + ` ",
                     "size": "md",
                     "margin": "md"
                 }
