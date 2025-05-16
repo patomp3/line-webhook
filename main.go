@@ -132,39 +132,45 @@ func webhookHandler(c *gin.Context) {
 							log.Println("Error sending reply:", err)
 						}
 					} else if message.Text == "สรุป" {
+						flexContainer := createFlexMessage()
+						replyMessage := linebot.NewFlexMessage("สรุปยอดเงินออม", flexContainer)
+						_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
+						if err != nil {
+							log.Println("Error sending Flex Message:", err)
+						}
 
 						// สร้างข้อความสรุป
-						groupID := event.Source.GroupID
-						appointments, err := getUpcomingAppointmentsNext3Days(groupID)
-						if err != nil {
-							log.Println("Error retrieving appointments:", err)
-							reply := linebot.NewTextMessage("เกิดข้อผิดพลาดในการดึงนัดหมาย")
-							bot.ReplyMessage(event.ReplyToken, reply).Do()
-							return
-						}
+						// groupID := event.Source.GroupID
+						// appointments, err := getUpcomingAppointmentsNext3Days(groupID)
+						// if err != nil {
+						// 	log.Println("Error retrieving appointments:", err)
+						// 	reply := linebot.NewTextMessage("เกิดข้อผิดพลาดในการดึงนัดหมาย")
+						// 	bot.ReplyMessage(event.ReplyToken, reply).Do()
+						// 	return
+						// }
 
-						if len(appointments) == 0 {
-							flexContainer := createFlexMessage()
-							replyMessage := linebot.NewFlexMessage("สรุปยอดเงินออม", flexContainer)
-							_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
-							if err != nil {
-								log.Println("Error sending Flex Message:", err)
-							}
-						} else {
-							var sb strings.Builder
-							sb.WriteString("📅 นัดหมายที่กำลังจะถึง:\n")
-							for _, ap := range appointments {
-								sb.WriteString("- " + ap.ApDate + " " + ap.ApTime + " : " + ap.Message + "\n")
-							}
-							//reply := linebot.NewTextMessage(sb.String())
+						// if len(appointments) == 0 {
+						// 	flexContainer := createFlexMessage()
+						// 	replyMessage := linebot.NewFlexMessage("สรุปยอดเงินออม", flexContainer)
+						// 	_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
+						// 	if err != nil {
+						// 		log.Println("Error sending Flex Message:", err)
+						// 	}
+						// } else {
+						// 	var sb strings.Builder
+						// 	sb.WriteString("📅 นัดหมายที่กำลังจะถึง:\n")
+						// 	for _, ap := range appointments {
+						// 		sb.WriteString("- " + ap.ApDate + " " + ap.ApTime + " : " + ap.Message + "\n")
+						// 	}
+						// 	//reply := linebot.NewTextMessage(sb.String())
 
-							flexContainer := createFlexMessageWithAppointment(sb)
-							replyMessage := linebot.NewFlexMessage("สรุปยอดเงินออม", flexContainer)
-							_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
-							if err != nil {
-								log.Println("Error sending Flex Message:", err)
-							}
-						}
+						// 	flexContainer := createFlexMessageWithAppointment(sb)
+						// 	replyMessage := linebot.NewFlexMessage("สรุปยอดเงินออม", flexContainer)
+						// 	_, err := bot.ReplyMessage(event.ReplyToken, replyMessage).Do()
+						// 	if err != nil {
+						// 		log.Println("Error sending Flex Message:", err)
+						// 	}
+						// }
 
 					} else if strings.HasPrefix(message.Text, "บันทึกนัดหมาย ") {
 						// แยกคำสั่งกับเนื้อหา
