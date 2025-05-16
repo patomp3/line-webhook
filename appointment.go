@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -29,7 +30,7 @@ func saveAppointmentToMongo(groupId, msg, dateStr, timeStr string) error {
 	}
 
 	// Connect to MongoDB
-	clientOptions := options.Client().ApplyURI("mongodb://mongo:QhHhaLDEsDhFbMPvBAFgwghrowhKoGgN@shortline.proxy.rlwy.net:44021")
+	clientOptions := options.Client().ApplyURI(os.Getenv("MONGO_DB"))
 	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		return err
@@ -42,7 +43,7 @@ func saveAppointmentToMongo(groupId, msg, dateStr, timeStr string) error {
 }
 
 func getUpcomingAppointments(groupID string) ([]Appointment, error) {
-	clientOptions := options.Client().ApplyURI("mongodb://mongo:QhHhaLDEsDhFbMPvBAFgwghrowhKoGgN@shortline.proxy.rlwy.net:44021")
+	clientOptions := options.Client().ApplyURI(os.Getenv("MONGO_DB"))
 	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		return nil, err
