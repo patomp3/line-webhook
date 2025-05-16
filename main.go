@@ -362,6 +362,8 @@ func createFlexMessageWithAppointment(sb strings.Builder) linebot.FlexContainer 
         }
     }`
 
+	log.Printf("%s", flexJSON)
+
 	flexContainer, err := linebot.UnmarshalFlexMessageJSON([]byte(flexJSON))
 	if err != nil {
 		log.Println("Error creating Flex Message:", err)
