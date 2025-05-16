@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -320,6 +321,13 @@ func createFlexMessage() linebot.FlexContainer {
 }
 
 func createFlexMessageWithAppointment(sb strings.Builder) linebot.FlexContainer {
+
+	escapedSB, err := json.Marshal("สรุปการนัดหมายล่วงหน้า: " + sb.String())
+	if err != nil {
+		log.Println("Error escaping string:", err)
+		return nil
+	}
+
 	flexJSON := `{
         "type": "bubble",
         "body": {
@@ -346,7 +354,7 @@ func createFlexMessageWithAppointment(sb strings.Builder) linebot.FlexContainer 
                 },
                 {
                     "type": "text",
-                    "text": "สรุปการนัดหมายล่วงหน้า: ` + sb.String() + ` ",
+                    "text": "สรุปการนัดหมายล่วงหน้า: ` + string(escapedSB) + ` ",
                     "size": "md",
                     "margin": "md"
                 }
